@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- No maximum-scale and no user-scalable: the page must stay zoomable. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="robots" content="noindex" />
+    <title>loot-ledger &mdash; live loot log</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#feed-region">Skip to the loot feed</a>
+
+    <noscript>
+      <p class="noscript">
+        This dashboard is a live view and needs JavaScript. The same data is
+        available without it as JSON at <code>/api/snapshot</code>.
+      </p>
+    </noscript>
+
+    <div class="app">
+      <!-- ============================ top bar ============================ -->
+      <header class="topbar">
+        <div class="brand">
+          <svg
+            class="brand-mark"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M12 1.7 22.3 12 12 22.3 1.7 12Z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <path d="M6.4 12h11.2" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+          <h1 class="brand-name">loot&#8209;ledger</h1>
+        </div>
+
+        <p class="conn" id="conn" role="status" data-state="connecting">
+          <span class="conn-dot" id="conn-dot" data-state="connecting" aria-hidden="true"></span>
+          <span class="conn-text" id="conn-text">connecting&hellip;</span>
+        </p>
+
+        <div class="filter">
+          <label class="filter-label" for="q">Filter</label>
+          <input
+            class="filter-input"
+            id="q"
+            name="q"
+            type="search"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="player or item"
+            aria-describedby="q-help"
+          />
+          <p class="sr-only" id="q-help">
+            Filters the loot feed and the player roster as you type. Press Escape
+            to clear it.
+          </p>
+        </div>
+      </header>
+
+      <!-- ========================== session totals ======================= -->
+      <section class="totals" aria-labelledby="totals-heading">
+        <h2 class="sr-only" id="totals-heading">Session totals</h2>
+        <dl class="stats">
+          <div class="stat stat--lead">
+            <dt>Loot events <span class="stat-sub">every grab seen</span></dt>
+            <dd class="stat-value" id="t-events">0</dd>
+          </div>
+          <div class="stat">
+            <dt>Item grabs <span class="stat-sub">excludes silver</span></dt>
+            <dd class="stat-value" id="t-items">0</dd>
+          </div>
+          <div class="stat">
+            <dt>Units <span class="stat-sub">items looted</span></dt>
+            <dd class="stat-value" id="t-units">0</dd>
+          </div>
+          <div class="stat">
+            <dt>Silver <span class="stat-sub">transfers</span></dt>
+            <dd class="stat-value" id="t-silver">0</dd>
+          </div>
+          <div class="stat">
+            <dt>Players <span class="stat-sub">seen this session</span></dt>
+            <dd class="stat-value" id="t-players">0</dd>
+          </div>
+          <div class="stat">
+            <dt>Unnamed <span class="stat-sub">not in catalogue</span></dt>
+            <dd class="stat-value" id="t-unknown">0</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- ============================== panes ============================ -->
+      <main class="panes">
+        <!-- ---------------------------- feed ---------------------------- -->
+        <section class="panel" id="feed-region" aria-labelledby="feed-heading">
+          <div class="panel-head">
+            <h2 class="panel-title" id="feed-heading">Loot feed</h2>
+            <p class="panel-meta" id="feed-meta">connecting&hellip;</p>
+          </div>
+
+          <div class="panel-body" id="feed-scroll">
+            <table class="grid grid--feed" id="feed-table">
+              <caption class="sr-only">
+                Loot grabs in your current zone, newest first. Up to 300 rows are
+                kept on screen.
+              </caption>
+              <thead>
+                <tr>
+                  <th class="c-time" scope="col">Time</th>
+                  <th class="c-by" scope="col">Player</th>
+                  <th class="c-from" scope="col">From</th>
+                  <th class="c-item" scope="col">Item</th>
+                  <th class="c-qty" scope="col" title="Silver amount, or item count">Qty</th>
+                </tr>
+              </thead>
+              <tbody id="feed-body"></tbody>
+            </table>
+
+            <div class="empty" id="feed-empty">
+              <p class="empty-title" id="empty-title">Waiting for the game</p>
+              <p class="empty-body" id="empty-body">
+                Nothing recorded yet. loot-ledger is listening; start or join
+                Albion Online and grabs will appear here as they happen.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- --------------------------- roster --------------------------- -->
+        <section class="panel" aria-labelledby="roster-heading">
+          <div class="panel-head">
+            <h2 class="panel-title" id="roster-heading">Players</h2>
+            <p class="panel-meta" id="roster-meta">&nbsp;</p>
+          </div>
+
+          <div class="panel-body" id="roster-scroll">
+            <table class="grid grid--roster" id="roster-table">
+              <caption class="sr-only">
+                Every player seen, most recently active first, with the number of
+                grabs and the number of item units loot-ledger recorded for them.
+                When more players are known than fit, the most recent are listed
+                and the count above the table says how many are not shown.
+              </caption>
+              <thead>
+                <tr>
+                  <th class="c-name" scope="col">Player</th>
+                  <th class="c-num" scope="col">Grabs</th>
+                  <th class="c-num" scope="col">Units</th>
+                  <th class="c-seen" scope="col">Seen</th>
+                </tr>
+              </thead>
+              <tbody id="roster-body"></tbody>
+            </table>
+
+            <div class="empty" id="roster-empty">
+              <p class="empty-title">No players yet</p>
+              <p class="empty-body">
+                A name appears here the first time loot-ledger sees someone loot
+                something.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ============================== footer =========================== -->
+      <footer class="foot">
+        <p class="coverage">
+          <span class="coverage-tag">Coverage</span>
+          Only what Albion Online already sends your client: loot in your
+          current zone, your party, your guild and your alliance. The server
+          never sends the rest, so there is nothing further to read. A passive
+          log of your own traffic &mdash; no overlay, no positions, nothing
+          injected.
+        </p>
+        <p class="foot-note">
+          This page stays on your machine and is served only to the loopback
+          interface, but it has no password: any program or user on this
+          computer can read what it shows. Do not leave it running somewhere
+          others have an account.
+        </p>
+
+        <div class="facts">
+          <dl class="fact-row">
+            <div class="fact">
+              <dt>Up</dt>
+              <dd id="f-uptime">&mdash;</dd>
+            </div>
+            <div class="fact">
+              <dt>Listening on</dt>
+              <dd id="f-iface">&mdash;</dd>
+            </div>
+            <div class="fact">
+              <dt>Zone change</dt>
+              <dd id="f-zone">&mdash;</dd>
+            </div>
+          </dl>
+
+          <details class="diag">
+            <summary>Diagnostics</summary>
+            <dl class="diag-grid">
+              <div class="fact">
+                <dt>Character</dt>
+                <dd id="d-self">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Started</dt>
+                <dd id="d-started">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Kernel filter</dt>
+                <dd id="d-filter">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Packets</dt>
+                <dd id="d-packets" class="num">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Messages</dt>
+                <dd id="d-messages" class="num">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Decode errors</dt>
+                <dd id="d-decode" class="num">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Unnamed items</dt>
+                <dd id="d-unknown" class="num">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Frames skipped</dt>
+                <dd id="d-skipped" class="num">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>CRC checked</dt>
+                <dd id="d-crc" class="num">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Replayed</dt>
+                <dd id="d-replay" class="num">&mdash;</dd>
+              </div>
+              <div class="fact">
+                <dt>Item catalogue</dt>
+                <dd id="d-catalogue">&mdash;</dd>
+              </div>
+            </dl>
+          </details>
+        </div>
+      </footer>
+    </div>
+
+    <!--
+      One polite live region for new loot, kept out of the feed itself so a
+      screen reader is not asked to re-read a growing table. Empty in the
+      markup on purpose: the region exists before the text ever changes.
+    -->
+    <p class="sr-only" id="announce" role="status" aria-live="polite"></p>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

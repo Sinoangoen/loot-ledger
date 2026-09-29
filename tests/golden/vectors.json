@@ -1,0 +1,282 @@
+{
+  "description": "Golden decode vectors produced by the reference ao-loot-logger implementation. Regenerate with: node tools/gen-golden.js ../ao-loot-logger-main tests/golden/vectors.json",
+  "cases": [
+    {
+      "name": "loot-event-mixed-types",
+      "payload": "000004010000000000000000060000000000003900000000f30401000601730007426f7373526174027300044772696d036f000469000004d2056900000003fc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "1": "BossRat",
+            "2": "Grim",
+            "3": false,
+            "4": 1234,
+            "5": 3,
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "event-with-unicode-names",
+      "payload": "000004010000000000000000060000000000004600000000f304010004017300114772c3bcc39f6520e697a5e69cace8aa9e0273000bc39c6ec3af63c3b664c3a93373000743616f696d6865fc690000001d",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "1": "Grüße 日本語",
+            "2": "Ünïcödé",
+            "51": "Caoimhe",
+            "252": 29
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "event-with-int64-and-float",
+      "payload": "000004010000000000000000060000000000003000000000f304010006076c0000083126e978d408663fc000000a6b04d20b622a0c2afc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "7": 9007199254740,
+            "8": 1.5,
+            "10": 1234,
+            "11": 42,
+            "12": null,
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "event-with-slice",
+      "payload": "000004010000000000000000060000000000002800000000f30401000214790003690000000a000000140000001efc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "20": [
+              10,
+              20,
+              30
+            ],
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "event-with-dictionary",
+      "payload": "000004010000000000000000060000000000003200000000f3040100021e44736900020005616c7068610000000100046265746100000002fc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "30": {
+              "alpha": 1,
+              "beta": 2
+            },
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "event-with-empty-string-and-zero-quantity",
+      "payload": "000004010000000000000000060000000000002c00000000f30401000501730000027300044772696d036f01056900000000fc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "1": "",
+            "2": "Grim",
+            "3": true,
+            "5": 0,
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "operation-request",
+      "payload": "000004010000000000000000060000000000001d00000000f3021d0002006900000007fd690000001d",
+      "emitted": [
+        {
+          "kind": "request",
+          "code": 29,
+          "params": {
+            "0": 7,
+            "253": 29
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "operation-response",
+      "payload": "000004010000000000000000060000000000003f00000000f3030200002a0004027300044772696d3973000e5468652056616e677569736865644d73000743616f696d6865fd6900000002",
+      "emitted": [
+        {
+          "kind": "response",
+          "code": 2,
+          "returnCode": 0,
+          "params": {
+            "2": "Grim",
+            "57": "The Vanguished",
+            "77": "Caoimhe",
+            "253": 2
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "two-commands-in-one-packet",
+      "payload": "000004020000000000000000060000000000002000000001f304010002027300054669727374fc6900000113060000000000002100000002f304010002027300065365636f6e64fc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "2": "First",
+            "252": 275
+          }
+        },
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "2": "Second",
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "unreliable-command-with-sequence-prefix",
+      "payload": "0000040100000000000000000700000000000029000000000000002af3040100020273000a556e72656c6961626c65fc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "2": "Unreliable",
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "fragment-incomplete",
+      "payload": "000004010000000000000000080000000000003f000000070000000700000002000000000000003f00000000f30401000501730010467261676d656e74656456696374696d027300104672",
+      "emitted": [],
+      "threw": null
+    },
+    {
+      "name": "fragmented-event-reassembled-out-of-order",
+      "packets": [
+        "0000040100000000000000000800000000000040000000070000000700000002000000010000003f0000001f61676d656e7465644c6f6f7465720469000003db05690000000bfc6900000113",
+        "000004010000000000000000080000000000003f000000070000000700000002000000000000003f00000000f30401000501730010467261676d656e74656456696374696d027300104672"
+      ],
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "1": "FragmentedVictim",
+            "2": "FragmentedLooter",
+            "4": 987,
+            "5": 11,
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "encrypted-packet",
+      "payload": "000001010000000000000000060000000000001700000000f304010001fc6900000113",
+      "emitted": [],
+      "threw": null
+    },
+    {
+      "name": "ping-only-packet",
+      "payload": "000004010000000000000000050000000000001000000001aabbccdd",
+      "emitted": [],
+      "threw": null
+    },
+    {
+      "name": "unknown-command-type-is-skipped",
+      "payload": "00000402000000000000000042000000000000100000000101020304060000000000002700000002f3040100020273000c4166746572556e6b6e6f776efc6900000113",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {
+            "2": "AfterUnknown",
+            "252": 275
+          }
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "truncated-packet",
+      "payload": "0000040100",
+      "emitted": [],
+      "threw": null
+    },
+    {
+      "name": "empty-packet",
+      "payload": "",
+      "emitted": [],
+      "threw": null
+    },
+    {
+      "name": "event-with-unknown-param-type",
+      "payload": "000004010000000000000000060000000000001600000000f304010001fc63ffffff",
+      "emitted": [],
+      "threw": "unknown paramType code. paramType=0x63 position=6"
+    },
+    {
+      "name": "event-with-zero-parameter-count",
+      "payload": "000004010000000000000000060000000000001100000000f304010000",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {}
+        }
+      ],
+      "threw": null
+    },
+    {
+      "name": "event-with-negative-parameter-count",
+      "payload": "000004010000000000000000060000000000001100000000f30401ffff",
+      "emitted": [
+        {
+          "kind": "event",
+          "code": 1,
+          "params": {}
+        }
+      ],
+      "threw": null
+    }
+  ]
+}

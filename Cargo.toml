@@ -1,0 +1,29 @@
+[package]
+name = "loot-ledger"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Records the loot players pick up in your Albion Online zone"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+
+[lib]
+name = "loot_ledger"
+path = "src/lib.rs"
+
+[[bin]]
+name = "loot-ledger"
+path = "src/main.rs"
+
+# Intentionally empty. loot-ledger talks to the kernel directly (AF_PACKET raw
+# sockets, classic BPF) and implements HTTP, JSON and the event log itself, so
+# `cargo build` works with no registry access and no vendored crates.
+[dependencies]
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

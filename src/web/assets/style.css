@@ -1,0 +1,884 @@
+/* ===========================================================================
+   loot-ledger dashboard
+   ---------------------------------------------------------------------------
+   Three rules shape this file.
+
+   1. Tokens are two-tier. `--p-*` names a value and is never used by a
+      component; `--bg-*` / `--text-*` / `--border-*` / `--accent-*` /
+      `--status-*` name a job and are the only tier a rule below may use.
+      Light mode therefore swaps one block of primitives and nothing else.
+
+   2. Every colour pair below was measured, not eyeballed. The neutral ramp
+      and the gold ramp are each generated in OKLCH with the hue held end to
+      end (neutral 250, gold 85) and converted to sRGB with chroma reduced
+      until the colour fits the gamut, so hue and lightness survive. Body and
+      UI text is >= 4.5:1 and the focus ring and control borders are >= 3:1
+      against every surface they can land on, in both themes.
+
+   3. Motion is opt-in. Anything that moves is inside
+      `prefers-reduced-motion: no-preference`.
+   =========================================================================== */
+
+/* ------------------------------- primitives ------------------------------- */
+
+:root {
+  color-scheme: dark light;
+
+  /* Neutral ramp: one cool blue-grey, hue 250 held end to end. */
+  --p-n-10: #0d1013;
+  --p-n-20: #15191d;
+  --p-n-30: #21262b;
+  --p-n-40: #30363c;
+  --p-n-50: #666d74;
+  --p-n-60: #879098;
+  --p-n-70: #aeb5bd;
+  --p-n-90: #f0f4f7;
+
+  /* Gold ramp: one accent hue, 85.
+
+     Scope, stated accurately: within the data, gold means "you" and nothing
+     else -- your own row, your own name, the "you" label, and never colour
+     alone. Outside the data it is also used for the product's own voice (the
+     brand mark and the coverage note). An earlier version of this comment
+     claimed gold meant "you" and nothing else at all, which was not true. */
+  --p-g-30: #5c4a24;
+  --p-g-50: #a4802b;
+  --p-g-70: #ddb049;
+  --p-g-85: #f5cf7d;
+  --p-g-ink: #1a1304;
+
+  /* Status ramps. Ok, warn and crit sit far enough apart in hue that none of
+     them can be read as the gold accent, and each is always paired with a
+     word, so colour is never the only cue. */
+  --p-ok-70: #6ad895;
+  --p-ok-ink: #021709;
+  --p-warn-70: #ffa063;
+  --p-warn-ink: #270e01;
+  --p-crit-70: #f66c6d;
+  --p-crit-ink: #290607;
+
+  --p-focus: #8ecbff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Not a mechanical inversion: the dark end is wider, vividness is pulled
+       back, and every step is re-measured against the light surfaces. */
+    --p-n-10: #f0f3f6;
+    --p-n-20: #fcfdfe;
+    --p-n-30: #e7ebf0;
+    --p-n-40: #cad0d6;
+    --p-n-50: #838a92;
+    --p-n-60: #5e666e;
+    --p-n-70: #484f57;
+    --p-n-90: #1b2127;
+
+    --p-g-30: #efdcb5;
+    --p-g-50: #957321;
+    --p-g-70: #7f5f0a;
+    --p-g-85: #684c00;
+    --p-g-ink: #fffbf4;
+
+    --p-ok-70: #007742;
+    --p-ok-ink: #f4fff7;
+    --p-warn-70: #a75000;
+    --p-warn-ink: #fffbfa;
+    --p-crit-70: #ae212f;
+    --p-crit-ink: #fffbfa;
+
+    --p-focus: #0267c7;
+  }
+}
+
+/* ---------------------------------- roles --------------------------------- */
+/* The only tier a rule below this line may reference. */
+
+:root {
+  --bg-page: var(--p-n-10);
+  --bg-surface: var(--p-n-20);
+  --bg-raised: var(--p-n-30);
+  --bg-inset: var(--p-n-10);
+
+  --border-subtle: var(--p-n-40);
+  --border-control: var(--p-n-50);
+
+  --text-primary: var(--p-n-90);
+  --text-secondary: var(--p-n-70);
+  --text-faint: var(--p-n-60);
+  --text-on-fill: var(--p-g-ink);
+
+  --accent: var(--p-g-70);
+  --accent-bright: var(--p-g-85);
+  --accent-rule: var(--p-g-50);
+  --accent-fill: var(--p-g-70);
+  --accent-on-fill: var(--p-g-ink);
+
+  --status-ok: var(--p-ok-70);
+  --status-ok-fill: var(--p-ok-70);
+  --status-ok-ink: var(--p-ok-ink);
+  --status-warn: var(--p-warn-70);
+  --status-warn-fill: var(--p-warn-70);
+  --status-warn-ink: var(--p-warn-ink);
+  --status-crit: var(--p-crit-70);
+  --status-crit-fill: var(--p-crit-70);
+  --status-crit-ink: var(--p-crit-ink);
+
+  --focus-ring: var(--p-focus);
+
+  /* Spacing. Intra-group 4/8px, inter-group 16/24px. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+
+  --radius-panel: 8px;
+  --radius-control: 6px;
+  --radius-chip: 4px;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, "Noto Sans", sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --fs-xs: 0.6875rem;
+  --fs-sm: 0.75rem;
+  --fs-md: 0.8125rem;
+  --fs-base: 0.875rem;
+  --fs-lg: 1rem;
+}
+
+/* ---------------------------------- base ---------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+p,
+dl,
+dd,
+dt {
+  margin: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Numbers that tick while you watch them must not move. */
+.num,
+.stat-value,
+.c-time,
+.c-qty,
+.c-num,
+.c-seen {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* -------------------------------- utilities ------------------------------- */
+
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  inset-block-start: var(--sp-2);
+  inset-inline-start: var(--sp-2);
+  z-index: 10;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  transform: translateY(-250%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.noscript {
+  margin: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+code {
+  font-family: var(--font-num);
+  font-size: 0.95em;
+}
+
+/* One focus treatment, everywhere. The ring is drawn outside the control, on
+   the surface, where it measures >= 3:1 in both themes. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-chip);
+}
+
+/* --------------------------------- shell ---------------------------------- */
+
+.app {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  min-block-size: 100vh;
+}
+
+/* --------------------------------- topbar --------------------------------- */
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-inline-end: auto;
+}
+
+.brand-mark {
+  color: var(--accent);
+  flex: none;
+}
+
+.brand-name {
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* Connection: a coloured dot plus a word. The word is the real cue. */
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.conn-dot {
+  /* It is a span: without an explicit display, width and height are ignored
+     and the indicator collapses to nothing. */
+  display: inline-block;
+  inline-size: 9px;
+  block-size: 9px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-faint);
+}
+
+.conn-dot[data-state="live"] {
+  background: var(--status-ok);
+}
+
+.conn-dot[data-state="reconnecting"] {
+  background: var(--status-warn);
+}
+
+.conn-dot[data-state="stopped"] {
+  background: var(--status-crit);
+}
+
+.conn[data-state="live"] .conn-text {
+  color: var(--status-ok);
+}
+
+.conn[data-state="reconnecting"] .conn-text {
+  color: var(--status-warn);
+}
+
+.conn[data-state="stopped"] .conn-text {
+  color: var(--status-crit);
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.filter-label {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.filter-input {
+  inline-size: 14rem;
+  max-inline-size: 100%;
+  min-block-size: 32px;
+  padding: 5px var(--sp-2);
+  font: inherit;
+  font-size: var(--fs-md);
+  color: var(--text-primary);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+}
+
+.filter-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* ------------------------------ session totals ---------------------------- */
+
+.totals {
+  min-inline-size: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-surface);
+  min-inline-size: 0;
+}
+
+.stat dt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.stat-sub {
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-faint);
+}
+
+.stat-value {
+  font-size: clamp(1.25rem, 1.05rem + 0.7vw, 1.625rem);
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.stat--lead .stat-value {
+  font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.5rem);
+}
+
+/* --------------------------------- panes ---------------------------------- */
+
+.panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-3);
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-inline-size: 0;
+  min-block-size: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.panel-title {
+  font-size: var(--fs-md);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.panel-meta {
+  font-size: var(--fs-sm);
+  color: var(--text-faint);
+  text-align: end;
+}
+
+.panel-body {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-control) var(--bg-surface);
+}
+
+/* ---------------------------------- grids --------------------------------- */
+/* `separate` rather than `collapse`, so the sticky header sticks and every
+   cell can own its own rule. */
+
+.grid {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.grid thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  padding: 6px var(--sp-3);
+  background: var(--bg-surface);
+  border-block-end: 1px solid var(--border-subtle);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: start;
+  white-space: nowrap;
+}
+
+.grid tbody td,
+.grid tbody th {
+  padding: 6px var(--sp-3);
+  border-block-end: 1px solid var(--border-subtle);
+  vertical-align: baseline;
+  font-size: var(--fs-base);
+  font-weight: 400;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+/* -- feed -- */
+
+.grid--feed .c-time {
+  inline-size: 6.5rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.grid--feed .c-qty {
+  inline-size: 5rem;
+  text-align: end;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.grid--feed .c-by {
+  inline-size: 27%;
+}
+
+.grid--feed .c-from {
+  inline-size: 23%;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grid--feed .c-item {
+  color: var(--text-primary);
+}
+
+.grid--feed tr.is-silver .c-item,
+.grid--feed tr.is-unknown .c-item {
+  color: var(--text-secondary);
+}
+
+/* The guild tag, exactly as the game renders it, one step down in emphasis. */
+.guild {
+  color: var(--text-faint);
+}
+
+.you {
+  display: inline-block;
+  /* The separating space is a real text node so the accessible name reads
+     "Grim you"; this margin only adds optical space on top of it. */
+  margin-inline-start: 2px;
+  padding-inline: 5px;
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-rule);
+  border-radius: var(--radius-chip);
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+/* Your own grabs get a gold rule and the word "you", never colour alone. */
+.grid tbody tr.is-self .c-by {
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+
+.grid tbody tr.is-self .pname {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* -- roster -- */
+
+.grid--roster .c-num {
+  inline-size: 4.5rem;
+  text-align: end;
+  color: var(--text-secondary);
+}
+
+.grid--roster .c-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.grid--roster .c-seen {
+  display: none;
+}
+
+/* ------------------------------- hover cues -------------------------------- */
+/* Gated on hover, so a touch tap never leaves a row stuck in hover state. */
+
+@media (hover: hover) {
+  .grid tbody tr:hover td,
+  .grid tbody tr:hover th {
+    background: var(--bg-raised);
+  }
+
+  .grid thead th:hover {
+    background: var(--bg-raised);
+  }
+
+  .filter-input:hover {
+    border-color: var(--text-faint);
+  }
+
+  .diag > summary:hover {
+    color: var(--text-secondary);
+  }
+}
+
+/* ------------------------------ empty states ------------------------------ */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-4);
+  max-inline-size: 42rem;
+}
+
+.empty-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-body {
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* --------------------------------- footer --------------------------------- */
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-2) var(--sp-5);
+  padding: var(--sp-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+}
+
+/* The coverage limit is stated once, permanently, in plain words. */
+.coverage {
+  flex: 1 1 22rem;
+  max-inline-size: 46rem;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* Quiet companion to the coverage note, not a second call to action. */
+.foot-note {
+  flex: 0 1 auto;
+  max-inline-size: 34rem;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  /* --text-faint is an existing, measured token; do not invent one here. */
+  color: var(--text-faint);
+  text-wrap: pretty;
+}
+
+.coverage-tag {
+  display: inline-block;
+  margin-inline-end: 6px;
+  padding-inline: 5px;
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-rule);
+  border-radius: var(--radius-chip);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-inline-size: 0;
+}
+
+.fact-row,
+.diag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-4);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.fact dt {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.fact dd {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.diag {
+  font-size: var(--fs-sm);
+}
+
+.diag > summary {
+  inline-size: fit-content;
+  padding: 2px 0;
+  color: var(--text-faint);
+  cursor: pointer;
+  border-radius: var(--radius-chip);
+  list-style-position: inside;
+}
+
+.diag[open] > summary {
+  margin-block-end: var(--sp-2);
+}
+
+.diag-grid {
+  max-inline-size: 46rem;
+}
+
+/* ------------------------------- wide panes ------------------------------- */
+/* The breakpoint comes from the content: below 64rem the two panes cannot
+   both keep their columns, so the page becomes one scrolling document. */
+
+@media (min-width: 64rem) {
+  .app {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    block-size: 100vh;
+    block-size: 100dvh;
+    min-block-size: 0;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+    overflow: hidden;
+  }
+
+  .panes {
+    grid-template-columns: minmax(0, 1fr) minmax(21rem, 25rem);
+  }
+
+  /* The roster's "seen" column only earns its place once the panes are side
+     by side and wide enough for it. */
+  .grid--roster .c-seen {
+    display: table-cell;
+  }
+}
+
+/* -------------------------------- narrow end ------------------------------ */
+/* Nothing folds away without a reason: the secondary columns go first and the
+   row keeps the two things that answer "who took what, and when".
+
+   That means FROM folds and TIME stays. An earlier version hid the timestamp
+   instead, which contradicted the sentence above it and took the only means of
+   reading when something happened with it -- the <time> tooltip lives in the
+   same cell, so hiding the column lost the timestamp entirely.
+
+   The class-based selectors below match both the header cell and the body
+   cells, so a column is never half-hidden. */
+
+@media (max-width: 44rem) {
+  .grid--feed .c-from {
+    display: none;
+  }
+
+  .grid--feed .c-by {
+    inline-size: 38%;
+  }
+
+  .grid--feed .c-qty {
+    inline-size: 3.75rem;
+  }
+
+  .grid--feed .c-time {
+    inline-size: 5.5rem;
+  }
+
+  .grid--roster .c-num {
+    inline-size: 3.75rem;
+  }
+
+  .filter {
+    inline-size: 100%;
+  }
+
+  .filter-input {
+    flex: 1 1 auto;
+    inline-size: auto;
+  }
+}
+
+@media (max-width: 26rem) {
+  /* FROM already folded at 44rem and the timestamp deliberately stays, so
+     there is no column to hide here -- only widths to retune. */
+  .grid--feed .c-by {
+    inline-size: 44%;
+  }
+
+  .grid--roster .c-num {
+    inline-size: 3.25rem;
+    padding-inline: var(--sp-2);
+  }
+}
+
+/* --------------------------------- motion --------------------------------- */
+/* Opt-in only. Under reduced motion nothing here animates at all. */
+
+@media (prefers-reduced-motion: no-preference) {
+  .grid tbody tr.is-new {
+    animation: ll-row-in 1100ms ease-out 1;
+  }
+
+  @keyframes ll-row-in {
+    from {
+      background: var(--bg-raised);
+    }
+
+    to {
+      background: transparent;
+    }
+  }
+}
+
+/* ------------------------------ forced colours ---------------------------- */
+/* Where the user agent owns the palette, hand it back to the system. */
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid CanvasText;
+  }
+
+  .conn-dot {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+
+  .conn-dot[data-state="live"] {
+    background: Highlight;
+  }
+
+  .you,
+  .coverage-tag {
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+
+  .skip-link {
+    border-color: CanvasText;
+  }
+}
+
+/* ------------------------------ more contrast ----------------------------- */
+
+@media (prefers-contrast: more) {
+  :root {
+    --border-subtle: var(--p-n-50);
+    --text-faint: var(--p-n-70);
+  }
+}
